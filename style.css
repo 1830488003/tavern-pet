@@ -1,194 +1,475 @@
 /* 酒馆宠物扩展样式 */
 
 #tavern-pet-button {
-    position: fixed !important;
-    z-index: 1050;
-    cursor: grab;
-    width: 100px; /* 调整为更合适的尺寸 */
-    height: 100px;
-    border: none;
-    background-color: transparent;
-    box-shadow: none;
-    padding: 0; /* 移除内边距 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  position: fixed !important;
+  z-index: 99998; /* 提高层级，防止被遮挡 */
+  cursor: grab;
+  width: 50px; /* (v10.1.6) 缩小尺寸 */
+  height: 50px; /* (v10.1.6) 缩小尺寸 */
+  border: none;
+  background-color: transparent;
+  box-shadow: none;
+  padding: 0; /* 移除内边距 */
+  display: flex;
+  flex-direction: column; /* 让图片和文字垂直排列 */
+  align-items: center;
+  justify-content: center;
+  gap: 5px; /* 图片和文字之间的间距 */
 
-    /* 默认初始位置 */
-    top: 120px;
-    right: 20px;
+  /* 默认初始位置 */
+  top: 120px;
+  right: 20px;
+  position: relative; /* (v10.1.5) 添加相对定位，作为刷新按钮的定位锚点 */
+}
+
+/* (v10.1.5) 新增：右上角刷新/切换姿态按钮样式 */
+#tavern-pet-refresh-button {
+  position: absolute;
+  top: 2px; /* (v10.1.6) 调整位置 */
+  right: 2px; /* (v10.1.6) 调整位置 */
+  width: 20px; /* (v10.1.6) 缩小尺寸 */
+  height: 20px; /* (v10.1.6) 缩小尺寸 */
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0; /* 默认隐藏 */
+  transition: opacity 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  z-index: 1; /* 确保在图片之上 */
+}
+
+#tavern-pet-button:hover #tavern-pet-refresh-button {
+  opacity: 0.8; /* 悬停在宠物身上时显示 */
+}
+
+#tavern-pet-refresh-button:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+#tavern-pet-refresh-button svg {
+  width: 14px; /* (v10.1.6) 缩小尺寸 */
+  height: 14px; /* (v10.1.6) 缩小尺寸 */
+  fill: #ffffff;
 }
 
 /* 宠物图片样式 */
 #tavern-pet-button img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* 保持图片比例 */
-    pointer-events: none; /* 防止图片干扰拖动事件 */
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 保持图片比例 */
+  pointer-events: none; /* 防止图片干扰拖动事件 */
 }
+
+/* 状态文本样式 */
+#tavern-pet-status-text {
+  position: absolute;
+  bottom: -15px; /* (v10.1.6) 调整位置 */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap; /* 防止文字换行 */
+  pointer-events: none; /* 不干扰点击 */
+  transition: opacity 0.3s ease;
+  opacity: 1;
+}
+
+#tavern-pet-status-text:empty {
+  opacity: 0;
+}
+
 
 /* --- 宠物弹窗样式 (v9 UI overhaul) --- */
 .tavern-pet-popup {
-    position: fixed !important;
-    z-index: 1100;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    width: 95vw !important;
-    max-width: 600px !important;
-    max-height: 90vh !important;
-    background-color: var(--main-bg-color, #2c2f33);
-    color: var(--text-color, #ffffff);
-    border: 1px solid var(--border-color, #40444b);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-    display: flex;
-    flex-direction: column;
-    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  position: fixed !important;
+  z-index: 99999; /* 提高层级 */
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 95vw !important;
+  max-width: 600px !important;
+  max-height: 90vh !important;
+  background-color: var(--main-bg-color, #2c2f33);
+  color: var(--text-color, #ffffff);
+  border: 1px solid var(--border-color, #40444b);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 }
 
 @media (max-width: 768px) {
-    .tavern-pet-popup {
-        top: 5vh !important;
-        left: 2.5vw !important;
-        width: 95vw !important;
-        transform: translate(0, 0) !important;
-    }
+  .tavern-pet-popup {
+    /* (v11.1.4) 修复平板布局: 继承水平居中，调整宽度 */
+    left: 50% !important; /* 保持水平居中 */
+    width: 90vw !important; /* 使用视口宽度的90% */
+    max-width: none !important; /* 取消最大宽度限制，使其完全自适应 */
+    transform: translate(-50%, -50%) !important; /* 保持完整的居中变换 */
+  }
 }
 
 .tavern-pet-popup-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 15px 0 0;
-    border-bottom: 1px solid var(--border-color, #40444b);
-    flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px 0 0;
+  border-bottom: 1px solid var(--border-color, #40444b);
+  flex-shrink: 0;
 }
 
 .tavern-pet-popup-close-button {
-    cursor: pointer;
-    font-size: 24px;
-    color: var(--text-muted-color, #99aab5);
-    padding: 10px 15px;
-    transition: color 0.2s ease;
+  cursor: pointer;
+  font-size: 24px;
+  color: var(--text-muted-color, #99aab5);
+  padding: 10px 15px;
+  transition: color 0.2s ease;
 }
 .tavern-pet-popup-close-button:hover {
-    color: var(--text-color, #ffffff);
+  color: var(--text-color, #ffffff);
 }
 
 .tavern-pet-popup-body {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 0;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0;
+  /* (v11) 强制隐藏滚动条 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
 }
 .tavern-pet-popup-body::-webkit-scrollbar {
-    display: none;
+    width: 0;  /* Safari and Chrome */
+    height: 0;
 }
 
 .tavern-pet-tabs {
-    display: flex;
-    flex-grow: 1;
+  display: flex;
+  flex-grow: 1;
 }
 
 .tab-button {
-    padding: 12px 18px;
-    cursor: pointer;
-    border: none;
-    background-color: transparent;
-    color: var(--text-muted-color, #99aab5);
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s ease-in-out;
-    font-size: 1em;
+  padding: 12px 18px;
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+  color: var(--text-muted-color, #99aab5);
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease-in-out;
+  font-size: 1em;
 }
 
 .tab-button.active {
-    color: var(--primary-color, #7289da);
-    border-bottom-color: var(--primary-color, #7289da);
-    font-weight: bold;
+  color: var(--primary-color, #7289da);
+  border-bottom-color: var(--primary-color, #7289da);
+  font-weight: bold;
 }
 
 .tab-button:hover {
-    background-color: rgba(255,255,255,0.05);
-    color: var(--text-color, #ffffff);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-color, #ffffff);
 }
 
 .pet-tab-content {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.pet-level-bar, .pet-status-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.pet-level-bar,
+.pet-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.pet-level-bar > span:first-child, .pet-status-bar > span:first-child {
-    width: 70px;
-    text-align: right;
+
+.pet-level-bar > span:first-child,
+.pet-status-bar > span:first-child {
+  width: 70px;
+  text-align: right;
+  color: var(--text-muted-color, #99aab5);
+  font-size: 0.9em;
+  flex-shrink: 0; /* 禁止标签收缩 */
+}
+
+/* (v11.1.3) 修复：为数值标签设置固定宽度，防止被压缩 */
+.pet-level-bar > span:last-child,
+.pet-status-bar > span:last-child {
+    min-width: 65px; /* 为 '100 / 100' 或更长的经验值提供足够空间 */
+    text-align: left;
     color: var(--text-muted-color, #99aab5);
     font-size: 0.9em;
-    flex-shrink: 0;
+    flex-shrink: 0; /* 同样禁止数值部分收缩 */
 }
 
 .pet-progress-bar-container {
-    flex-grow: 1;
-    height: 18px;
-    background-color: var(--section-bg-color, #23272a);
-    border-radius: 9px;
-    overflow: hidden;
+  flex-grow: 1;
+  height: 18px;
+  background-color: var(--section-bg-color, #23272a);
+  border-radius: 9px;
+  overflow: hidden;
 }
 
 .pet-progress-bar {
-    height: 100%;
-    border-radius: 9px;
-    transition: width 0.3s ease-in-out;
-    background-color: var(--primary-accent-color); /* Default color */
+  height: 100%;
+  border-radius: 9px;
+  transition: width 0.3s ease-in-out;
+  background-color: var(--primary-accent-color); /* Default color */
 }
 
-#pet-exp-bar { background-color: var(--primary-accent-color, #7289da); }
-#pet-hunger-bar { background-color: #f0ad4e; }
-#pet-happiness-bar { background-color: var(--success-color, #43b581); }
-#pet-cleanliness-bar { background-color: #5bc0de; }
-#pet-health-bar { background-color: var(--danger-color, #f04747); }
+#pet-exp-bar {
+  background-color: var(--primary-accent-color, #7289da);
+}
+#pet-hunger-bar {
+  background-color: #f0ad4e;
+}
+#pet-happiness-bar {
+  background-color: var(--success-color, #43b581);
+}
+#pet-cleanliness-bar {
+  background-color: #5bc0de;
+}
+#pet-health-bar {
+  background-color: var(--danger-color, #f04747);
+}
 
 .pet-coins-display {
-    text-align: right;
-    font-weight: bold;
-    font-size: 1.1em;
-    margin-top: 15px;
-    color: #ffd700;
+  text-align: right;
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-top: 15px;
+  color: #ffd700;
 }
 
 #interact-tab .pet-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
 }
 
-.pet-inventory-item, .pet-shop-item {
+/* (v11.1) 新增：活动状态视图样式 */
+#pet-activity-status-view {
     display: flex;
-    padding: 12px;
-    background-color: var(--section-bg-color, #23272a);
-    border-radius: 6px;
-    border: 1px solid var(--border-color, #40444b);
-    gap: 10px;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 15px;
+    padding: 20px;
+    height: 100%;
+}
+
+#pet-activity-name {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+#pet-activity-countdown {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: var(--primary-color, #7289da);
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#pet-cancel-activity-button {
+    background-color: var(--danger-color, #f04747);
+}
+
+#pet-cancel-activity-button:hover {
+    background-color: var(--danger-hover-color, #d84040);
+}
+
+/* 统一按钮样式 */
+.pet-action-button {
+  background-color: var(--primary-accent-color, #7289da);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+  white-space: nowrap; /* 禁止按钮文字换行 */
+}
+.pet-action-button:hover {
+  background-color: var(--primary-accent-hover-color, #677bc4);
+}
+.pet-action-button:active {
+  transform: scale(0.98);
+}
+.pet-action-button:disabled {
+  background-color: var(--button-inactive-bg-color, #4f545c);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pet-inventory-item,
+.pet-shop-item {
+  display: flex;
+  padding: 12px;
+  background-color: var(--section-bg-color, #23272a);
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #40444b);
+  gap: 10px;
+  align-items: center;
 }
 
 .pet-shop-item {
-    flex-wrap: wrap;
-}
-.pet-shop-item > div {
-    flex-basis: 70%;
-}
-.pet-shop-item .buy-item-button {
-    flex-basis: 20%;
-    margin-left: auto;
+  justify-content: space-between;
 }
 
-.pet-shop-item .item-name { font-weight: bold; }
-.pet-shop-item .item-desc { font-size: 0.9em; color: var(--text-muted-color); flex-basis: 100%;}
+.pet-shop-item .item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pet-shop-item .item-name {
+  font-weight: bold;
+}
+.pet-shop-item .item-desc {
+  font-size: 0.9em;
+  color: var(--text-muted-color);
+}
+
+/* --- (v11) 等级锁定UI样式 --- */
+.pet-shop-item.locked,
+.selection-item.locked {
+    position: relative; /* 为遮罩定位 */
+    pointer-events: none; /* 禁止所有内部元素的鼠标事件 */
+    user-select: none; /* 禁止选择文本 */
+}
+
+.pet-shop-item.locked .item-info,
+.selection-item.locked > span {
+    opacity: 0.5;
+}
+
+.lock-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    border-radius: 6px; /* 匹配父容器圆角 */
+    pointer-events: auto; /* 允许遮罩本身响应鼠标事件（如有需要，例如tooltip）*/
+    cursor: not-allowed;
+}
+
+.selection-item.locked .lock-overlay {
+  border-radius: 4px;
+}
+
+/* --- 通知与选择弹窗样式 --- */
+.tavern-pet-notification {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 400px;
+  background-color: var(--secondary-bg-color, #202225);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  z-index: 100000; /* 提高层级，确保在弹窗之上 */
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+.notification-buttons {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.notification-button {
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.notification-button.primary {
+  background-color: var(--primary-color, #7289da);
+  color: white;
+}
+.notification-button.secondary {
+  background-color: var(--button-inactive-bg-color, #4f545c);
+  color: var(--text-color);
+}
+
+#tavern-pet-item-selection h3 {
+  margin-top: 0;
+  font-size: 1.1em;
+  color: var(--text-color);
+}
+
+.selection-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 5px; /* for scrollbar */
+}
+/* (v11) 强制隐藏滚动条 */
+.selection-list {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+}
+.selection-list::-webkit-scrollbar {
+    width: 0;  /* Safari and Chrome */
+    height: 0;
+}
+
+.selection-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: var(--section-bg-color);
+  border-radius: 4px;
+}
+
+/* 宠物下方临时反馈文本框 (v10) */
+#tavern-pet-feedback-box {
+  position: absolute;
+  bottom: -35px; /* (v10.1.6) 调整位置 */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+  pointer-events: none; /* 不干扰点击 */
+  opacity: 0; /* 默认完全透明 */
+  transition: opacity 0.5s ease-in-out; /* 添加淡入淡出动画效果 */
+  z-index: 99998; /* 与宠物按钮同级 */
+}
+
+/* 用于通过JS控制显示的类 */
+#tavern-pet-feedback-box.show {
+  opacity: 1;
+}
