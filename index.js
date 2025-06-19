@@ -18,9 +18,38 @@ jQuery(async () => {
     // --- 全局状态 ---
     let allPetsData = {}; // 存储从 pets.json 加载的所有宠物数据
     let petState = {}; // 当前宠物的状态
+
+    // --- 商店和物品定义 ---
+    const shopItems = {
+        food: {
+            '普通饼干': { price: 5, description: '恢复15点饥饿度', hunger: 15 },
+            '豪华大餐': { price: 20, description: '恢复60点饥饿度，10点心情', hunger: 60, happiness: 10 },
+        },
+        medicine: {
+            '药丸': { price: 30, description: '恢复全部健康值', health: 100 },
+        },
+        cleaning: {
+            '肥皂': { price: 15, description: '恢复全部清洁度', cleanliness: 100 },
+        },
+        toys: {
+            '小皮球': { price: 50, description: '增加30点心情', happiness: 30 },
+        }
+    };
+
     let defaultPetState = {
+        // 核心属性
         hunger: 80,
         happiness: 90,
+        cleanliness: 70,
+        health: 100,
+        // 养成属性
+        level: 1,
+        exp: 0,
+        maxExp: 100,
+        // 经济系统
+        coins: 50,
+        inventory: {}, // { '普通饼干': 2, '肥皂': 1 }
+        // 宠物身份
         petId: null, // 当前宠物的ID (即名字)
         poseIndex: 0, // 当前姿态的索引
         lastUpdate: Date.now(),
@@ -102,13 +131,24 @@ jQuery(async () => {
             return;
         }
         console.log("酒馆宠物：正在创建按钮...");
-        // 在按钮内部直接创建一个img元素
+        // 在按钮内部直接创建一个img元素和一个刷新按钮
         const buttonHtml = `
             <div id="${PET_BUTTON_ID}" title="酒馆宠物">
                 <img src="${petState.currentGif}" alt="Tavern Pet">
+                <div id="tavern-pet-refresh-button" title="切换姿态">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    </svg>
+                </div>
             </div>`;
         $("body").append(buttonHtml);
         const $petButton = $(`#${PET_BUTTON_ID}`);
+
+        // 绑定切换姿态事件到新按钮
+        $petButton.find('#tavern-pet-refresh-button').on('click', (e) => {
+            e.stopPropagation(); // 阻止事件冒泡，防止触发弹窗
+            changePetPose();
+        });
 
         const savedPosition = JSON.parse(localStorage.getItem(STORAGE_KEY_BUTTON_POS) || "null");
         if (savedPosition) {
@@ -218,66 +258,53 @@ jQuery(async () => {
     };
 
     /**
-     * 显示宠物弹窗
+     * 增加经验值并处理升级
      */
-    const showPetPopup = () => {
-        if ($(`#${PET_POPUP_ID}`).length > 0) return;
-
-        // 动态生成宠物选择下拉菜单
-        const petOptions = Object.keys(allPetsData).map(name => 
-            `<option value="${name}" ${name === petState.petId ? 'selected' : ''}>${name}</option>`
-        ).join('');
-
-        const popupHtml = `
-            <div id="${PET_POPUP_ID}" class="tavern-pet-popup">
-                <div class="tavern-pet-popup-header">
-                    <span id="pet-name-display">${petState.petId}</span>
-                    <div class="tavern-pet-popup-close-button">✖</div>
-                </div>
-                <div class="tavern-pet-popup-body">
-                    <div class="pet-select-container">
-                        <label for="pet-select">选择宠物:</label>
-                        <select id="pet-select" class="text_pole">${petOptions}</select>
-                    </div>
-                    <div class="pet-status-bar"><span>饥饿度:</span><div class="pet-progress-bar-container"><div id="pet-hunger-bar" class="pet-progress-bar"></div></div></div>
-                    <div class="pet-status-bar"><span>心情:</span><div class="pet-progress-bar-container"><div id="pet-happiness-bar" class="pet-progress-bar"></div></div></div>
-                    <div class="pet-actions">
-                        <button id="feed-pet-button" class="menu_button">投喂</button>
-                        <button id="play-with-pet-button" class="menu_button">陪玩</button>
-                        <button id="change-pose-button" class="menu_button">切换姿态</button>
-                    </div>
-                </div>
-            </div>`;
-        $("body").append(popupHtml);
-        updatePetPopup();
-
-        // --- 绑定事件 ---
-        $(`#${PET_POPUP_ID} .tavern-pet-popup-close-button`).on("click", closePetPopup);
-        $('#feed-pet-button').on('click', feedPet);
-        $('#play-with-pet-button').on('click', playWithPet);
-        $('#change-pose-button').on('click', changePetPose);
-        
-        // 宠物选择事件
-        $('#pet-select').on('change', function() {
-            const newPetId = $(this).val();
-            if (newPetId && allPetsData[newPetId]) {
-                petState.petId = newPetId;
-                petState.poseIndex = 0; // 切换宠物时重置姿态
-                updatePetImage();
-                updatePetPopup(); // 更新弹窗内的名字
-                savePetState();
-            }
-        });
+    const addExp = (amount) => {
+        petState.exp += amount;
+        while (petState.exp >= petState.maxExp) {
+            petState.level++;
+            petState.exp -= petState.maxExp;
+            petState.maxExp = Math.floor(petState.maxExp * 1.5); // 升级所需经验增加
+            petState.coins += 100; // 升级奖励
+            console.log(`恭喜！宠物升到了 ${petState.level} 级！`);
+        }
     };
 
     /**
-     * 更新宠物弹窗UI
+     * 使用物品
      */
-    const updatePetPopup = () => {
-        if ($(`#${PET_POPUP_ID}`).length === 0) return;
-        $('#pet-name-display').text(petState.petId); // 使用 petId 作为名字
-        $('#pet-hunger-bar').css('width', `${petState.hunger}%`);
-        $('#pet-happiness-bar').css('width', `${petState.happiness}%`);
+    const useItem = (itemName) => {
+        if (!petState.inventory[itemName] || petState.inventory[itemName] <= 0) {
+            console.log(`你没有 ${itemName}。`);
+            return;
+        }
+
+        let itemData = null;
+        for (const category in shopItems) {
+            if (shopItems[category][itemName]) {
+                itemData = shopItems[category][itemName];
+                break;
+            }
+        }
+        
+        if (!itemData) {
+            console.error(`物品 ${itemName} 的数据未找到！`);
+            return;
+        }
+
+        petState.inventory[itemName]--;
+
+        // 应用物品效果
+        if (itemData.hunger) petState.hunger = Math.min(100, petState.hunger + itemData.hunger);
+        if (itemData.happiness) petState.happiness = Math.min(100, petState.happiness + itemData.happiness);
+        if (itemData.cleanliness) petState.cleanliness = Math.min(100, petState.cleanliness + itemData.cleanliness);
+        if (itemData.health) petState.health = Math.min(100, petState.health + itemData.health);
+
+        addExp(10); // 使用任何物品都会获得少量经验
+        savePetState();
+        updatePetPopup();
+        console.log(`使用了 ${itemName}。`);
     };
 
     /**
@@ -288,38 +315,303 @@ jQuery(async () => {
     };
 
     /**
-     * 投喂宠物
+     * 渲染状态标签页
      */
-    const feedPet = () => {
-        petState.hunger = Math.min(100, petState.hunger + 15);
-        savePetState();
-        updatePetPopup();
+    const renderStatusTab = () => {
+        const petOptions = Object.keys(allPetsData).map(name => 
+            `<option value="${name}" ${name === petState.petId ? 'selected' : ''}>${name}</option>`
+        ).join('');
+
+        return `
+            <div class="pet-tab-content" id="status-tab">
+                <div class="pet-select-container">
+                    <label for="pet-select">当前宠物:</label>
+                    <select id="pet-select" class="text_pole">${petOptions}</select>
+                </div>
+                <div class="pet-level-bar">
+                    <span>等级: ${petState.level}</span>
+                    <div class="pet-progress-bar-container"><div id="pet-exp-bar" class="pet-progress-bar" style="width: ${petState.exp / petState.maxExp * 100}%;"></div></div>
+                    <span>${petState.exp} / ${petState.maxExp}</span>
+                </div>
+                <div class="pet-status-grid">
+                    <div class="pet-status-bar"><span>饥饿度:</span><div class="pet-progress-bar-container"><div id="pet-hunger-bar" class="pet-progress-bar" style="width: ${petState.hunger}%;"></div></div></div>
+                    <div class="pet-status-bar"><span>心情:</span><div class="pet-progress-bar-container"><div id="pet-happiness-bar" class="pet-progress-bar" style="width: ${petState.happiness}%;"></div></div></div>
+                    <div class="pet-status-bar"><span>清洁度:</span><div class="pet-progress-bar-container"><div id="pet-cleanliness-bar" class="pet-progress-bar" style="width: ${petState.cleanliness}%;"></div></div></div>
+                    <div class="pet-status-bar"><span>健康值:</span><div class="pet-progress-bar-container"><div id="pet-health-bar" class="pet-progress-bar" style="width: ${petState.health}%;"></div></div></div>
+                </div>
+                <div class="pet-coins-display">
+                    <span>酒馆硬币: ${petState.coins} 💰</span>
+                </div>
+            </div>
+        `;
+    };
+
+    /**
+     * 渲染互动标签页
+     */
+    const renderInteractTab = () => {
+        // 在这里可以根据宠物的状态（如是否生病/打工）禁用某些按钮
+        return `
+            <div class="pet-tab-content" id="interact-tab" style="display:none;">
+                <p>在这里和你的宠物互动！</p>
+                <div class="pet-actions">
+                    <button class="menu_button" data-action="feed">喂食 (从背包)</button>
+                    <button class="menu_button" data-action="play">陪玩</button>
+                    <button class="menu_button" data-action="clean">洗澡 (消耗肥皂)</button>
+                    <button class="menu_button" data-action="heal">看病 (消耗药丸)</button>
+                    <button class="menu_button" data-action="work">打工 (15分钟)</button>
+                </div>
+            </div>
+        `;
+    };
+    
+    /**
+     * 渲染背包标签页
+     */
+    const renderInventoryTab = () => {
+        let itemsHtml = '';
+        const inventory = petState.inventory || {};
+        const hasItems = Object.values(inventory).some(qty => qty > 0);
+
+        if (!hasItems) {
+            itemsHtml = '<p>你的背包空空如也~</p>';
+        } else {
+            itemsHtml = Object.entries(inventory).map(([itemName, quantity]) => {
+                if (quantity > 0) {
+                    return `<div class="pet-inventory-item" data-item-name="${itemName}"><span>${itemName} x${quantity}</span><button class="menu_button use-item-button">使用</button></div>`;
+                }
+                return '';
+            }).join('');
+        }
+        return `
+            <div class="pet-tab-content" id="inventory-tab" style="display:none;">
+                <div class="pet-inventory-grid">${itemsHtml}</div>
+            </div>
+        `;
+    };
+
+    /**
+     * 渲染商店标签页
+     */
+    const renderShopTab = () => {
+        let shopHtml = '';
+        for (const category in shopItems) {
+            const categoryName = { food: '食物', medicine: '药品', cleaning: '清洁', toys: '玩具' }[category] || category;
+            shopHtml += `<h3>${categoryName}</h3>`;
+            const itemsInCategory = Object.entries(shopItems[category]).map(([itemName, item]) => {
+                return `
+                    <div class="pet-shop-item" data-item-name="${itemName}" data-item-price="${item.price}">
+                        <div class="item-name">${itemName} - ${item.price}💰</div>
+                        <div class="item-desc">${item.description}</div>
+                        <button class="menu_button buy-item-button">购买</button>
+                    </div>
+                `;
+            }).join('');
+            shopHtml += `<div class="pet-shop-category">${itemsInCategory}</div>`;
+        }
+        return `
+            <div class="pet-tab-content" id="shop-tab" style="display:none;">
+                ${shopHtml}
+            </div>
+        `;
+    };
+
+    /**
+     * 更新宠物弹窗UI
+     */
+    const updatePetPopup = () => {
+        if ($(`#${PET_POPUP_ID}`).length === 0) return;
+        
+        // 更新状态页
+        if ($('#status-tab').is(':visible')) {
+            $('#pet-exp-bar').css('width', `${(petState.exp / petState.maxExp) * 100}%`).parent().next().text(`${petState.exp} / ${petState.maxExp}`);
+            $('#pet-level-bar > span:first-child').text(`等级: ${petState.level}`);
+            $('#pet-hunger-bar').css('width', `${petState.hunger}%`);
+            $('#pet-happiness-bar').css('width', `${petState.happiness}%`);
+            $('#pet-cleanliness-bar').css('width', `${petState.cleanliness}%`);
+            $('#pet-health-bar').css('width', `${petState.health}%`);
+            $('.pet-coins-display').html(`<span>酒馆硬币: ${petState.coins} 💰</span>`);
+        }
+        
+        // 重新渲染背包和商店以反映最新状态
+        if ($('#inventory-tab').is(':visible')) {
+            $('#inventory-tab').replaceWith($(renderInventoryTab()).show());
+        }
+         if ($('#shop-tab').is(':visible')) {
+            // 只更新金币显示，避免重绘整个商店
+            // 如果需要更复杂的更新，可以只重新渲染部分内容
+        }
+    };
+
+    /**
+     * 显示宠物弹窗
+     */
+    const showPetPopup = () => {
+        if ($(`#${PET_POPUP_ID}`).length > 0) return;
+
+        const popupHtml = `
+            <div id="${PET_POPUP_ID}" class="tavern-pet-popup">
+                <div class="tavern-pet-popup-header">
+                    <div class="tavern-pet-tabs">
+                        <button class="tab-button active" data-tab="status-tab">状态</button>
+                        <button class="tab-button" data-tab="interact-tab">互动</button>
+                        <button class="tab-button" data-tab="inventory-tab">背包</button>
+                        <button class="tab-button" data-tab="shop-tab">商店</button>
+                    </div>
+                    <div class="tavern-pet-popup-close-button">✖</div>
+                </div>
+                <div class="tavern-pet-popup-body">
+                    ${renderStatusTab()}
+                    ${renderInteractTab()}
+                    ${renderInventoryTab()}
+                    ${renderShopTab()}
+                </div>
+            </div>`;
+        $("body").append(popupHtml);
+        
+        // --- 绑定事件 ---
+        $(`#${PET_POPUP_ID} .tavern-pet-popup-close-button`).on("click", closePetPopup);
+        
+        // 标签页切换
+        $('.tab-button').on('click', function() {
+            const tabId = $(this).data('tab');
+            $('.tab-button').removeClass('active');
+            $(this).addClass('active');
+            $('.pet-tab-content').hide();
+            $(`#${tabId}`).show();
+            // 切换时重新渲染，确保数据最新
+            if (tabId === 'inventory-tab') {
+                 $('#inventory-tab').replaceWith($(renderInventoryTab()).show());
+            } else if (tabId === 'shop-tab') {
+                 $('#shop-tab').replaceWith($(renderShopTab()).show());
+            }
+            updatePetPopup();
+        });
+
+        // 宠物选择事件
+        $('#pet-select').on('change', function() {
+            const newPetId = $(this).val();
+            if (newPetId && allPetsData[newPetId]) {
+                petState.petId = newPetId;
+                petState.poseIndex = 0; // 切换宠物时重置姿态
+                updatePetImage();
+                savePetState();
+            }
+        });
+        
+        // 商店购买事件
+        $('body').on('click', '#shop-tab .buy-item-button', function() {
+            const itemElement = $(this).closest('.pet-shop-item');
+            const itemName = itemElement.data('item-name');
+            const itemPrice = itemElement.data('item-price');
+
+            if (petState.coins >= itemPrice) {
+                petState.coins -= itemPrice;
+                petState.inventory[itemName] = (petState.inventory[itemName] || 0) + 1;
+                savePetState();
+                updatePetPopup();
+                console.log(`购买 ${itemName} 成功!`);
+            } else {
+                console.log("硬币不足！");
+            }
+        });
+        
+        // 其他互动事件和背包使用事件将在这里添加
+        $('body').on('click', '#interact-tab [data-action]', function() {
+            const action = $(this).data('action');
+            switch (action) {
+                case 'play':
+                    playWithPet();
+                    break;
+                case 'clean':
+                    useItem('肥皂');
+                    break;
+                case 'heal':
+                    useItem('药丸');
+                    break;
+                case 'work':
+                    workWithPet();
+                    break;
+                case 'feed':
+                    // 提示用户去背包选择食物
+                    console.log("请到【背包】标签页选择食物来喂食。");
+                    $('.tab-button[data-tab="inventory-tab"]').click();
+                    break;
+            }
+        });
+
+        $('body').on('click', '#inventory-tab .use-item-button', function() {
+            const itemName = $(this).closest('.pet-inventory-item').data('item-name');
+            useItem(itemName);
+        });
+
     };
 
     /**
      * 陪宠物玩
      */
     const playWithPet = () => {
-        petState.happiness = Math.min(100, petState.happiness + 10);
-        petState.hunger = Math.max(0, petState.hunger - 5);
+        if (petState.hunger < 10) {
+            console.log("宠物太饿了，不想玩。");
+            return;
+        }
+        petState.happiness = Math.min(100, petState.happiness + 15);
+        petState.hunger = Math.max(0, petState.hunger - 10);
+        addExp(15);
+        savePetState();
+        updatePetPopup();
+        console.log("你和宠物玩得很开心！");
+    };
+
+    /**
+     * 宠物去打工
+     */
+    const workWithPet = () => {
+        // 简单实现：立即获得奖励，未来可以加入定时器
+        if (petState.hunger < 20) {
+            console.log("宠物太饿了，不能去打工。");
+            return;
+        }
+        console.log("宠物努力打工，赚了30个硬币！");
+        petState.coins += 30;
+        petState.hunger = Math.max(0, petState.hunger - 20);
+        petState.cleanliness = Math.max(0, petState.cleanliness - 10);
+        addExp(25);
         savePetState();
         updatePetPopup();
     };
 
     /**
-     * 启动状态定时器
+     * 启动状态定时器 (游戏循环)
      */
     const startPetStatusTimer = () => {
         setInterval(() => {
             const now = Date.now();
             const timeDiffMinutes = (now - petState.lastUpdate) / (1000 * 60);
-            if (timeDiffMinutes > 5) {
-                petState.hunger = Math.max(0, petState.hunger - 2);
-                petState.happiness = Math.max(0, petState.happiness - 1);
-                savePetState();
-                updatePetPopup();
+
+            // 每分钟进行一次状态衰减
+            if (timeDiffMinutes >= 1) {
+                let needsUpdate = false;
+                
+                // 基础衰减
+                if (petState.hunger > 0) { petState.hunger = Math.max(0, petState.hunger - 1); needsUpdate = true; }
+                if (petState.happiness > 0) { petState.happiness = Math.max(0, petState.happiness - 1); needsUpdate = true; }
+                if (petState.cleanliness > 0) { petState.cleanliness = Math.max(0, petState.cleanliness - 1); needsUpdate = true; }
+
+                // 状态惩罚
+                if (petState.hunger < 20) {
+                    if (petState.health > 0) { petState.health = Math.max(0, petState.health - 2); needsUpdate = true; }
+                }
+                if (petState.cleanliness < 20) {
+                    if (petState.health > 0) { petState.health = Math.max(0, petState.health - 1); needsUpdate = true; }
+                }
+
+                if (needsUpdate) {
+                    savePetState(); // 保存更新后的状态
+                    updatePetPopup(); // 更新UI
+                }
             }
-        }, 60 * 1000);
+        }, 30 * 1000); // 每30秒检查一次，保证分钟级衰减的准确性
     };
 
     /**

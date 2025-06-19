@@ -144,3 +144,132 @@
     color: var(--text-muted-color);
     margin: 0;
 }
+
+/* --- 刷新按钮样式 --- */
+#tavern-pet-refresh-button {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 28px;
+    height: 28px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0; /* 默认隐藏 */
+    transition: opacity 0.2s ease-in-out;
+}
+
+#tavern-pet-button:hover #tavern-pet-refresh-button {
+    opacity: 1; /* 悬浮时显示 */
+}
+
+#tavern-pet-refresh-button svg {
+    width: 18px;
+    height: 18px;
+    color: white;
+}
+
+/* --- v9.0.0 新版弹窗样式 --- */
+
+/* 弹窗头部和标签页 */
+.tavern-pet-tabs {
+    display: flex;
+    flex-grow: 1;
+}
+
+.tab-button {
+    padding: 10px 15px;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    color: var(--text-color);
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+.tab-button.active {
+    border-bottom-color: var(--primary-color);
+    font-weight: bold;
+}
+
+.tab-button:hover {
+    background-color: var(--background-color-secondary);
+}
+
+.pet-tab-content {
+    padding: 15px;
+}
+
+/* 状态页 */
+.pet-level-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.pet-status-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* 移动端默认单列 */
+    gap: 10px;
+    margin-bottom: 15px;
+}
+@media (min-width: 480px) { /* 稍宽屏幕变双列 */
+    .pet-status-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+.pet-coins-display {
+    text-align: right;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-top: 15px;
+}
+
+/* 互动页 */
+#interact-tab .pet-actions {
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 10px;
+}
+
+/* 背包页 */
+.pet-inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.pet-inventory-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: var(--background-color-secondary);
+    border-radius: 8px;
+}
+
+/* 商店页 */
+.pet-shop-category {
+    margin-bottom: 20px;
+}
+
+.pet-shop-item {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+.pet-shop-item .item-name {
+    font-weight: bold;
+}
+.pet-shop-item .item-desc {
+    font-size: 0.9em;
+    color: var(--text-muted-color);
+    margin: 5px 0;
+}
+.buy-item-button {
+    float: right;
+}
