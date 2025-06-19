@@ -27,249 +27,168 @@
     pointer-events: none; /* 防止图片干扰拖动事件 */
 }
 
-/* --- 宠物弹窗样式 --- */
+/* --- 宠物弹窗样式 (v9 UI overhaul) --- */
 .tavern-pet-popup {
-    /* 核心定位与尺寸 */
     position: fixed !important;
-    z-index: 1100; /* 比按钮更高 */
-    top: 5vh !important;
+    z-index: 1100;
+    top: 50% !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
+    transform: translate(-50%, -50%) !important;
     width: 95vw !important;
-    max-width: 500px !important; /* 调整一个适合宠物的尺寸 */
-    max-height: 80vh !important;
-
-    /* Flexbox布局，用于内部元素排列 */
+    max-width: 600px !important;
+    max-height: 90vh !important;
+    background-color: var(--main-bg-color, #2c2f33);
+    color: var(--text-color, #ffffff);
+    border: 1px solid var(--border-color, #40444b);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
 
-    /* 主题自适应样式 */
-    background-color: var(--background-color, #fff);
-    color: var(--text-color, #000);
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+@media (max-width: 768px) {
+    .tavern-pet-popup {
+        top: 5vh !important;
+        left: 2.5vw !important;
+        width: 95vw !important;
+        transform: translate(0, 0) !important;
+    }
 }
 
 .tavern-pet-popup-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
-    border-bottom: 1px solid var(--border-color, #ddd);
-    font-weight: bold;
+    padding: 0 15px 0 0;
+    border-bottom: 1px solid var(--border-color, #40444b);
+    flex-shrink: 0;
 }
 
 .tavern-pet-popup-close-button {
     cursor: pointer;
-    font-size: 20px;
-    padding: 5px;
+    font-size: 24px;
+    color: var(--text-muted-color, #99aab5);
+    padding: 10px 15px;
+    transition: color 0.2s ease;
+}
+.tavern-pet-popup-close-button:hover {
+    color: var(--text-color, #ffffff);
 }
 
 .tavern-pet-popup-body {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 20px;
-
-    /* 隐藏滚动条 */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none;  /* IE and Edge */
+    padding: 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 .tavern-pet-popup-body::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, and Opera */
+    display: none;
 }
 
-.pet-status-bar {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.pet-progress-bar-container {
-    flex-grow: 1;
-    height: 20px;
-    background-color: var(--background-color-secondary, #eee);
-    border-radius: 10px;
-    margin-left: 10px;
-    overflow: hidden;
-}
-
-.pet-progress-bar {
-    height: 100%;
-    background-color: var(--primary-color, #007bff);
-    border-radius: 10px;
-    transition: width 0.3s ease-in-out;
-}
-
-.pet-actions {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-}
-
-/* 新增：宠物选择器样式 */
-.pet-select-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-
-.pet-select-container label {
-    margin-right: 10px;
-    white-space: nowrap;
-}
-
-.pet-select-container select {
-    width: 100%;
-    max-width: 250px; /* 限制最大宽度 */
-}
-
-
-/* --- 设置面板样式 --- */
-.pet-settings-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.pet-setting-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.pet-setting-item label {
-    color: var(--text-muted-color);
-    margin: 0;
-}
-
-/* --- 刷新按钮样式 --- */
-#tavern-pet-refresh-button {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    width: 28px;
-    height: 28px;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0; /* 默认隐藏 */
-    transition: opacity 0.2s ease-in-out;
-}
-
-#tavern-pet-button:hover #tavern-pet-refresh-button {
-    opacity: 1; /* 悬浮时显示 */
-}
-
-#tavern-pet-refresh-button svg {
-    width: 18px;
-    height: 18px;
-    color: white;
-}
-
-/* --- v9.0.0 新版弹窗样式 --- */
-
-/* 弹窗头部和标签页 */
 .tavern-pet-tabs {
     display: flex;
     flex-grow: 1;
 }
 
 .tab-button {
-    padding: 10px 15px;
+    padding: 12px 18px;
     cursor: pointer;
     border: none;
     background-color: transparent;
-    color: var(--text-color);
+    color: var(--text-muted-color, #99aab5);
     border-bottom: 3px solid transparent;
     transition: all 0.2s ease-in-out;
+    font-size: 1em;
 }
 
 .tab-button.active {
-    border-bottom-color: var(--primary-color);
+    color: var(--primary-color, #7289da);
+    border-bottom-color: var(--primary-color, #7289da);
     font-weight: bold;
 }
 
 .tab-button:hover {
-    background-color: var(--background-color-secondary);
+    background-color: rgba(255,255,255,0.05);
+    color: var(--text-color, #ffffff);
 }
 
 .pet-tab-content {
-    padding: 15px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-/* 状态页 */
-.pet-level-bar {
+.pet-level-bar, .pet-status-bar {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 15px;
+}
+.pet-level-bar > span:first-child, .pet-status-bar > span:first-child {
+    width: 70px;
+    text-align: right;
+    color: var(--text-muted-color, #99aab5);
+    font-size: 0.9em;
+    flex-shrink: 0;
 }
 
-.pet-status-grid {
-    display: grid;
-    grid-template-columns: 1fr; /* 移动端默认单列 */
-    gap: 10px;
-    margin-bottom: 15px;
+.pet-progress-bar-container {
+    flex-grow: 1;
+    height: 18px;
+    background-color: var(--section-bg-color, #23272a);
+    border-radius: 9px;
+    overflow: hidden;
 }
-@media (min-width: 480px) { /* 稍宽屏幕变双列 */
-    .pet-status-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+
+.pet-progress-bar {
+    height: 100%;
+    border-radius: 9px;
+    transition: width 0.3s ease-in-out;
+    background-color: var(--primary-accent-color); /* Default color */
 }
+
+#pet-exp-bar { background-color: var(--primary-accent-color, #7289da); }
+#pet-hunger-bar { background-color: #f0ad4e; }
+#pet-happiness-bar { background-color: var(--success-color, #43b581); }
+#pet-cleanliness-bar { background-color: #5bc0de; }
+#pet-health-bar { background-color: var(--danger-color, #f04747); }
+
 .pet-coins-display {
     text-align: right;
     font-weight: bold;
     font-size: 1.1em;
     margin-top: 15px;
+    color: #ffd700;
 }
 
-/* 互动页 */
 #interact-tab .pet-actions {
-    flex-wrap: wrap; /* 允许换行 */
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 10px;
 }
 
-/* 背包页 */
-.pet-inventory-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
-}
-
-.pet-inventory-item {
+.pet-inventory-item, .pet-shop-item {
     display: flex;
-    justify-content: space-between;
+    padding: 12px;
+    background-color: var(--section-bg-color, #23272a);
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #40444b);
+    gap: 10px;
     align-items: center;
-    padding: 10px;
-    background-color: var(--background-color-secondary);
-    border-radius: 8px;
-}
-
-/* 商店页 */
-.pet-shop-category {
-    margin-bottom: 20px;
 }
 
 .pet-shop-item {
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    margin-bottom: 10px;
+    flex-wrap: wrap;
 }
-.pet-shop-item .item-name {
-    font-weight: bold;
+.pet-shop-item > div {
+    flex-basis: 70%;
 }
-.pet-shop-item .item-desc {
-    font-size: 0.9em;
-    color: var(--text-muted-color);
-    margin: 5px 0;
+.pet-shop-item .buy-item-button {
+    flex-basis: 20%;
+    margin-left: auto;
 }
-.buy-item-button {
-    float: right;
-}
+
+.pet-shop-item .item-name { font-weight: bold; }
+.pet-shop-item .item-desc { font-size: 0.9em; color: var(--text-muted-color); flex-basis: 100%;}
