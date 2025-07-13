@@ -13,7 +13,7 @@ if (!fs.existsSync(GIF_DIR)) {
 const BASE_URL = 'https://www.aigei.com/lib/sticker/cartoon_expression_';
 const START_PAGE = 1;
 // 我们可以先尝试抓取几页，比如5页，来确保逻辑正确
-const END_PAGE = 5; 
+const END_PAGE = 5;
 
 let totalStickers = 0;
 
@@ -25,67 +25,82 @@ function downloadImage(url, folderPath, fileName) {
         return;
     }
 
-    https.get(url, (res) => {
-        if (res.statusCode === 200) {
-            const fileStream = fs.createWriteStream(filePath);
-            res.pipe(fileStream);
-            fileStream.on('finish', () => {
-                fileStream.close();
-                // console.log(`下载成功: ${fileName}`);
-            });
-        } else {
-            console.error(`下载失败，状态码: ${res.statusCode}, URL: ${url}`);
-        }
-    }).on('error', (e) => {
-        console.error(`下载时发生错误: ${e.message}`);
-    });
+    https
+        .get(url, (res) => {
+            if (res.statusCode === 200) {
+                const fileStream = fs.createWriteStream(filePath);
+                res.pipe(fileStream);
+                fileStream.on('finish', () => {
+                    fileStream.close();
+                    // console.log(`下载成功: ${fileName}`);
+                });
+            } else {
+                console.error(
+                    `下载失败，状态码: ${res.statusCode}, URL: ${url}`,
+                );
+            }
+        })
+        .on('error', (e) => {
+            console.error(`下载时发生错误: ${e.message}`);
+        });
 }
 
 // 获取并解析单个页面的函数
 function getPage(page) {
     const url = `${BASE_URL}${page}`;
-    https.get(url, (res) => {
-        let html = '';
-        res.on('data', (chunk) => html += chunk);
-        res.on('end', () => {
-            console.log(`正在处理页面: ${url}`);
-            const $ = cheerio.load(html);
+    https
+        .get(url, (res) => {
+            let html = '';
+            res.on('data', (chunk) => (html += chunk));
+            res.on('end', () => {
+                console.log(`正在处理页面: ${url}`);
+                const $ = cheerio.load(html);
 
-            $('div[id^="item_"]').each((i, item) => {
-                const titleElement = $(item).find('.title a');
-                const title = titleElement.text().trim().replace(/[\\/:*?"<>|]/g, '_');
-                
-                if (!title) {
-                    console.warn('找到一个没有标题的专辑，跳过...');
-                    return;
-                }
+                $('div[id^="item_"]').each((i, item) => {
+                    const titleElement = $(item).find('.title a');
+                    const title = titleElement
+                        .text()
+                        .trim()
+                        .replace(/[\\/:*?"<>|]/g, '_');
 
-                const albumPath = path.join(GIF_DIR, title);
-                if (!fs.existsSync(albumPath)) {
-                    fs.mkdirSync(albumPath, { recursive: true });
-                }
-
-                $(item).find('.content img, .album_pic img').each((j, img) => {
-                    const imgUrl = $(img).attr('data-src') || $(img).attr('src');
-                    if (imgUrl) {
-                        const fullUrl = new URL(imgUrl, 'https://www.aigei.com').href;
-                        const fileName = `${j + 1}.gif`;
-                        downloadImage(fullUrl, albumPath, fileName);
-                        totalStickers++;
+                    if (!title) {
+                        console.warn('找到一个没有标题的专辑，跳过...');
+                        return;
                     }
-                });
-            });
 
-            if (page === END_PAGE) {
-                console.log('----------------------------------------');
-                console.log(`所有页面处理完毕！开始下载... (请稍候)`);
-                console.log(`预计将下载 ${totalStickers} 个表情包。`);
-                console.log('下载完成后，请检查 tavern-pet/gif/ 文件夹。');
-            }
+                    const albumPath = path.join(GIF_DIR, title);
+                    if (!fs.existsSync(albumPath)) {
+                        fs.mkdirSync(albumPath, { recursive: true });
+                    }
+
+                    $(item)
+                        .find('.content img, .album_pic img')
+                        .each((j, img) => {
+                            const imgUrl =
+                                $(img).attr('data-src') || $(img).attr('src');
+                            if (imgUrl) {
+                                const fullUrl = new URL(
+                                    imgUrl,
+                                    'https://www.aigei.com',
+                                ).href;
+                                const fileName = `${j + 1}.gif`;
+                                downloadImage(fullUrl, albumPath, fileName);
+                                totalStickers++;
+                            }
+                        });
+                });
+
+                if (page === END_PAGE) {
+                    console.log('----------------------------------------');
+                    console.log(`所有页面处理完毕！开始下载... (请稍候)`);
+                    console.log(`预计将下载 ${totalStickers} 个表情包。`);
+                    console.log('下载完成后，请检查 tavern-pet/gif/ 文件夹。');
+                }
+            });
+        })
+        .on('error', (e) => {
+            console.error(`获取页面 ${url} 时出错: ${e.message}`);
         });
-    }).on('error', (e) => {
-        console.error(`获取页面 ${url} 时出错: ${e.message}`);
-    });
 }
 
 // 开始执行

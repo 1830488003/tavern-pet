@@ -1,14 +1,14 @@
 {
-  "name": "aigei-sticker-scraper",
-  "version": "1.0.0",
-  "description": "A script to scrape stickers from aigei.com",
-  "main": "scraper.js",
-  "scripts": {
-    "start": "node scraper.js"
-  },
-  "dependencies": {
-    "cheerio": "^1.0.0-rc.12"
-  },
-  "author": "Cline",
-  "license": "MIT"
+    "name": "aigei-sticker-scraper",
+    "version": "1.0.0",
+    "description": "A script to scrape stickers from aigei.com",
+    "main": "scraper.js",
+    "scripts": {
+        "start": "node scraper.js"
+    },
+    "dependencies": {
+        "cheerio": "^1.0.0-rc.12"
+    },
+    "author": "Cline",
+    "license": "MIT"
 }
